@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql" // hoặc mysql/sqlite tùy bạn
+  url      = env("DATABASE_URL")
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum SizeType {
+  LETTER
+  NUMBER
+  NONE
+}
+
+model Order {
+  id              Int         @id @default(autoincrement())
+  userId          Int // Liên kết với người dùng
+  customerName    String 
+  customerPhone   String
+  totalAmount     Float
+  shippingAddress String
+  status          OrderStatus @default(PENDING)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Quan hệ
+  user  User        @relation(fields: [userId], references: [id])
+  items OrderItem[]
+}
+
+model OrderItem {
+  id              Int   @id @default(autoincrement())
+  orderId         Int
+  productId       Int
+  variantId       Int // Variant đã mua (size, màu sắc)
+  quantity        Int
+  priceAtPurchase Float // Giá đã tính toán lúc mua (bao gồm logic size)
+  
+  // Quan hệ
+  order   Order          @relation(fields: [orderId], references: [id])
+  product Product        @relation(fields: [productId], references: [id])
+  variant ProductVariant @relation(fields: [variantId], references: [id])
+
+  @@unique([orderId, variantId]) // Một variant chỉ có một dòng trong một đơn hàng
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  refreshToken String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  products Product[]
+  fullName String
+  orders   Order[]
+}
+
+model Category {
+  id       Int       @id @default(autoincrement())
+  name     String
+  products Product[]
+}
+
+model Product {
+  id                     Int              @id @default(autoincrement())
+  name                   String           @unique
+  slug                   String           @unique
+  description            String?
+  price                  Float
+  images                 String[]
+  categoryId             Int?
+  category               Category?        @relation(fields: [categoryId], references: [id])
+  orderItems             OrderItem[]
+  // Quan hệ với User: phải chỉ rõ fields và references
+  userId                 Int
+  user                   User?            @relation(fields: [userId], references: [id])
+  sizeType               SizeType         @default(NONE)
+  sizeIncreaseThreshold  String? // VD: 'XL'. Size bắt đầu tăng giá
+  sizeIncreasePercentage Float? // VD: 0.10. Tỷ lệ tăng giá
+  variants               ProductVariant[]
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
+}
+
+model ProductVariant {
+  id         Int         @id @default(autoincrement())
+  productId  Int
+  product    Product     @relation(fields: [productId], references: [id])
+  sizeValue  String
+  color      String?
+  sku        String
+  stock      Int
+  orderItems OrderItem[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@unique([productId, sizeValue])
+}
