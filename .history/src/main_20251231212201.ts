@@ -7,7 +7,7 @@ async function bootstrap() {
   // ✅ CẤU HÌNH CORS: 
   // Để linh hoạt nhất, mình cho phép tất cả các nguồn (hoặc giữ nguyên localhost:3000 của bạn)
   app.enableCors({
-    origin: 'https://4football.vercel.app/', // Sau này khi bạn deploy Frontend, hãy thay '*' bằng link Frontend thật
+    origin: 'https://4foobtall.vercel.app/', // Sau này khi bạn deploy Frontend, hãy thay '*' bằng link Frontend thật
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
